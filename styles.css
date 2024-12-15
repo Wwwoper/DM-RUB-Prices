@@ -7,3 +7,23 @@
     font-weight: 500;
     display: inline-block;
 }
+
+/* Специфичные стили для разных сайтов */
+.mueller-de .rub-price {
+    /* Специфичные стили для mueller.de */
+}
+
+.rossmann-de .rub-price {
+    /* Специфичные стили для rossmann.de */
+}
+
+/* Специфичные стили для Zara */
+.zara-com .rub-price {
+    margin-left: 8px;
+    color: #000;
+    background-color: #f8f8f8;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 400;
+}
