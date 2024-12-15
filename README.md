@@ -29,19 +29,21 @@
 
 ## Структура проекта
 
-extension/
-├── icons/
-│   ├── icon16.png
-│   ├── icon32.png
-│   ├── icon48.png
-│   └── icon128.png
-├── manifest.json
-├── content.js
-├── popup.html
-├── popup.js
-├── options.html
-├── options.js
-└── styles.css
+```
+   extension/
+   ├── icons/
+   │   ├── icon16.png
+   │   ├── icon32.png
+   │   ├── icon48.png
+   │   └── icon128.png
+   ├── manifest.json
+   ├── content.js
+   ├── popup.html
+   ├── popup.js
+   ├── options.html
+   ├── options.js
+   └── styles.css
+```
 
 ## Настройка
 
