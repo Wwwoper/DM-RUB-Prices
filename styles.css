@@ -1,0 +1,9 @@
+.rub-price {
+    margin-left: 10px;
+    color: #666;
+    background-color: #fff3b5;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-weight: 500;
+    display: inline-block;
+}
