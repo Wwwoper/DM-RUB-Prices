@@ -17,9 +17,10 @@ class PluginManager {
     }
 
     getPlugin(hostname) {
-        // Поиск подходящего плагина
         return Array.from(this.plugins.values()).find(plugin => {
-            return hostname.includes(plugin.name);
+            const pluginDomain = plugin.name.toLowerCase();
+            const currentDomain = hostname.toLowerCase();
+            return currentDomain.includes(pluginDomain);
         });
     }
 

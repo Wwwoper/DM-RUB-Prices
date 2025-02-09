@@ -56,7 +56,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         tab.url.includes('dm.de') || 
                         tab.url.includes('zara.com') || 
                         tab.url.includes('ikea.com') ||
-                        tab.url.includes('parfumdreams.de')
+                        tab.url.includes('parfumdreams.de') ||
+                        tab.url.includes('parfumsclub.de') ||
+                        tab.url.includes('cocooncenter.de')
                     )) {
                         console.log('Reloading tab:', tab.url);
                         // Сначала отправляем сообщение

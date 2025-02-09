@@ -55,6 +55,12 @@ const SITE_CONFIGS = {
         containerSelector: '.pip-price-module__primary-currency-price',
         currencySymbol: '€',
         delay: 1000
+    },
+    'cocooncenter.de': {
+        priceSelector: '.prix_fiche_produit [itemprop="price"]',
+        containerSelector: '.prix_fiche_produit',
+        currencySymbol: '€',
+        delay: 2000
     }
 };
 

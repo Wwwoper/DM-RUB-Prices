@@ -1,27 +1,19 @@
 console.log('Content script loaded');
 
 // Конфигурация логирования
-const DEBUG = false;
-const log = (...args) => DEBUG && console.log('[RUB Prices]:', ...args);
-const warn = (...args) => DEBUG && console.warn('[RUB Prices]:', ...args);
-const error = (...args) => console.error('[RUB Prices]:', ...args);
+const DEBUG = true;
+const log = (...args) => DEBUG && console.log('🔍 [RUB Prices]:', ...args);
+const warn = (...args) => DEBUG && console.warn('⚠️ [RUB Prices]:', ...args);
+const error = (...args) => console.error('❌ [RUB Prices]:', ...args);
 
 // Объект для работы с валютами
 const CurrencyConverter = {
     formatPrice(price) {
-        // Округляем до целого числа в большую сторону
-        const roundedPrice = Math.ceil(price);
-        return new Intl.NumberFormat('ru-RU', {
-            style: 'currency',
-            currency: 'RUB',
-            minimumFractionDigits: 0, // Убираем десятичные знаки
-            maximumFractionDigits: 0  // Убираем десятичные знаки
-        }).format(roundedPrice);
+        return Math.ceil(price);
     },
 
-    convertPrice(priceStr, exchangeRate, helpers) {
-        // Используем специфичную для сайта предобработку цены
-        const processedPrice = helpers?.preprocessPrice?.(priceStr) ?? priceStr;
+    convertPrice(priceText, exchangeRate) {
+        const processedPrice = priceText.replace(/\s+/g, ' ').trim();
         const price = parseFloat(processedPrice.replace(/[€EUR]/g, '').trim().replace(',', '.'));
         return this.formatPrice(price * exchangeRate);
     },
@@ -79,11 +71,9 @@ const DOMHandler = {
             
             if (priceElement.parentNode) {
                 priceElement.parentNode.insertBefore(rubPriceElement, priceElement.nextSibling);
-                log('Цена обновлена:', rubPrice);
                 return true;
             }
         } catch (err) {
-            error('Ошибка при добавлении конвертированной цены:', err);
             delete priceElement.dataset.rubPrice;
         }
         
@@ -115,31 +105,23 @@ function debounce(func, wait) {
 // Функция ожидания загрузки скрипта (если нужно)
 async function waitForScript(scriptName, config) {
     if (!scriptName) return;
-    
     let attempts = 0;
     const maxAttempts = 3;
-    
     while (attempts < maxAttempts) {
         if (window[scriptName]) return;
         await new Promise(resolve => setTimeout(resolve, 500));
         attempts++;
     }
-    warn(`Скрипт ${scriptName} не загружен после ${maxAttempts} попыток`);
 }
 
 // Основная функция добавления рублёвых цен
 async function addRubPrice(exchangeRate) {
     const config = getCurrentSiteConfig();
-    if (!config) {
-        warn('Конфигурация для текущего сайта не найдена');
-        return;
-    }
+    if (!config) return;
 
     try {
-        // Очищаем старые цены
         DOMHandler.clearOldPrices();
         
-        // Ждем загрузку необходимых скриптов и задержку сайта
         await Promise.all([
             waitForScript(config.scriptToWait, config),
             new Promise(resolve => setTimeout(resolve, config.delay || 1000))
@@ -148,28 +130,21 @@ async function addRubPrice(exchangeRate) {
         const debouncedUpdate = debounce(async () => {
             try {
                 const priceElement = DOMHandler.findPriceElement(config);
-                if (!priceElement) {
-                    warn('Элемент с ценой не найден');
-                    return;
+                if (priceElement) {
+                    DOMHandler.addConvertedPrice(priceElement, exchangeRate);
                 }
-                DOMHandler.addConvertedPrice(priceElement, exchangeRate);
-            } catch (err) {
-                error('Ошибка при обновлении цены:', err);
-            }
+            } catch (err) {}
         }, 500);
 
-        // Настройка observers
         const container = document.querySelector(config.containerSelector) || document.body;
         const observer = new MutationObserver(debouncedUpdate);
         observer.observe(container, { childList: true, subtree: true });
 
-        // URL observer в отдельной функции
         const setupUrlObserver = () => {
             let lastUrl = location.href;
             const urlObserver = new MutationObserver(debounce(() => {
                 if (location.href !== lastUrl) {
                     lastUrl = location.href;
-                    log('URL изменился');
                     DOMHandler.clearOldPrices();
                     init();
                 }
@@ -178,20 +153,14 @@ async function addRubPrice(exchangeRate) {
         };
 
         setupUrlObserver();
-        
-        // Первое обновление после всех настроек
         await debouncedUpdate();
 
-    } catch (err) {
-        error('Критическая ошибка:', err);
-    }
+    } catch (err) {}
 }
 
 // Слушатель изменений в storage
 chrome.storage.onChanged.addListener((changes, namespace) => {
     if (namespace === 'sync' && changes.exchangeRate) {
-        log('Курс обновлен:', changes.exchangeRate.newValue);
-        // Очищаем старые цены и обновляем с новым курсом
         DOMHandler.clearOldPrices();
         addRubPrice(changes.exchangeRate.newValue);
     }
@@ -199,16 +168,11 @@ chrome.storage.onChanged.addListener((changes, namespace) => {
 
 // Слушатель сообщений от popup
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    console.log('Message received in content script:', message);
-    
     if (message.type === 'updateExchangeRate') {
-        console.log('Updating exchange rate to:', message.rate);
         DOMHandler.clearOldPrices();
         addRubPrice(message.rate);
-        // Отправляем подтверждение
         sendResponse({ success: true });
     }
-    // Важно вернуть true для асинхронного ответа
     return true;
 });
 
@@ -223,9 +187,7 @@ const init = async () => {
 
         const exchangeRate = await CurrencyConverter.getExchangeRate();
         await addRubPrice(exchangeRate);
-    } catch (err) {
-        error('Ошибка инициализации:', err);
-    }
+    } catch (err) {}
 };
 
 // Запуск с учетом состояния DOM

@@ -3,94 +3,64 @@ document.addEventListener('DOMContentLoaded', () => {
     const saveButton = document.getElementById('save');
     const resetButton = document.getElementById('reset');
     const status = document.getElementById('status');
-    const footer = document.querySelector('.footer');
-
+    
     // Устанавливаем версию
-    const manifest = chrome.runtime.getManifest();
-    footer.textContent = `Версия ${manifest.version} • Автоматическая конвертация цен`;
+    document.querySelector('.footer').textContent = 
+        `Версия ${chrome.runtime.getManifest().version} • Автоматическая конвертация цен`;
 
-    // Загружаем текущие настройки
-    function loadOptions() {
-        chrome.storage.sync.get(
-            { exchangeRate: 95 },
-            (items) => {
-                exchangeRateInput.value = items.exchangeRate;
-            }
-        );
-    }
+    // Загружаем настройки
+    chrome.storage.sync.get({ exchangeRate: 95 }, items => 
+        exchangeRateInput.value = items.exchangeRate);
+
+    // Показ статуса
+    const showStatus = (message, type) => {
+        status.textContent = message;
+        status.className = `status ${type}`;
+        setTimeout(() => status.className = 'status', 2000);
+    };
 
     // Сохраняем настройки
-    function saveOptions() {
+    const saveOptions = () => {
         const newRate = parseFloat(exchangeRateInput.value);
         
         if (isNaN(newRate) || newRate <= 0) {
-            showStatus('Введите корректное значение курса!', 'error');
-            return;
+            return showStatus('Введите корректное значение курса!', 'error');
         }
 
-        chrome.storage.sync.set(
-            { exchangeRate: newRate },
-            () => {
-                showStatus('Настройки сохранены!', 'success');
-                
-                // Обновляем цены на всех открытых вкладках
-                chrome.tabs.query({}, (tabs) => {
-                    tabs.forEach(tab => {
-                        if (tab.url.includes('dm.de') || tab.url.includes('zara.com') || tab.url.includes('ikea.com')) {
-                            // Сначала отправляем сообщение об обновлении
-                            chrome.tabs.sendMessage(tab.id, {
-                                type: 'updateExchangeRate',
-                                rate: newRate
-                            }, () => {
-                                // После отправки сообщения перезагружаем вкладку
-                                chrome.tabs.reload(tab.id);
-                            });
-                        }
-                    });
+        chrome.storage.sync.set({ exchangeRate: newRate }, () => {
+            showStatus('Настройки сохранены!', 'success');
+            
+            // Обновляем цены на всех открытых вкладках
+            chrome.tabs.query({}, tabs => {
+                const sites = ['dm.de', 'zara.com', 'ikea.com', 'cocooncenter.de', 'parfumsclub.de', 'parfumdreams.de'];
+                tabs.forEach(tab => {
+                    if (sites.some(site => tab.url.includes(site))) {
+                        chrome.tabs.sendMessage(tab.id, { type: 'updateExchangeRate', rate: newRate }, 
+                            () => chrome.tabs.reload(tab.id));
+                    }
                 });
-            }
-        );
-    }
+            });
+        });
+    };
 
-    // Сброс настроек с перезагрузкой вкладок
-    function resetOptions() {
-        const defaultRate = 95;
-        exchangeRateInput.value = defaultRate;
-        chrome.storage.sync.set(
-            { exchangeRate: defaultRate },
-            () => {
-                showStatus('Настройки сброшены!', 'success');
-                
-                // Перезагружаем вкладки после сброса
-                chrome.tabs.query({}, (tabs) => {
-                    tabs.forEach(tab => {
-                        if (tab.url.includes('dm.de') || tab.url.includes('zara.com') || tab.url.includes('ikea.com')) {
-                            chrome.tabs.reload(tab.id);
-                        }
-                    });
+    // Сброс настроек
+    const resetOptions = () => {
+        exchangeRateInput.value = 95;
+        chrome.storage.sync.set({ exchangeRate: 95 }, () => {
+            showStatus('Настройки сброшены!', 'success');
+            chrome.tabs.query({}, tabs => {
+                const sites = ['dm.de', 'zara.com', 'ikea.com'];
+                tabs.forEach(tab => {
+                    if (sites.some(site => tab.url.includes(site))) {
+                        chrome.tabs.reload(tab.id);
+                    }
                 });
-            }
-        );
-    }
-
-    // Показ статуса
-    function showStatus(message, type) {
-        status.textContent = message;
-        status.className = `status ${type}`;
-        setTimeout(() => {
-            status.className = 'status';
-        }, 2000);
-    }
+            });
+        });
+    };
 
     // Обработчики событий
     saveButton.addEventListener('click', saveOptions);
     resetButton.addEventListener('click', resetOptions);
-    exchangeRateInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            saveOptions();
-        }
-    });
-
-    // Загружаем настройки при открытии страницы
-    loadOptions();
+    exchangeRateInput.addEventListener('keypress', e => e.key === 'Enter' && saveOptions());
 });
