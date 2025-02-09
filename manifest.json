@@ -25,31 +25,34 @@
       "tabs"
   ],
   "host_permissions": [
-      "*://*.dm.de/*",
-      "*://*.zara.com/*",
-      "*://*.ikea.com/*",
-      "*://*.parfumdreams.de/*"
+    "*://*.dm.de/*",
+    "*://*.zara.com/*",
+    "*://*.ikea.com/*",
+    "*://*.parfumdreams.de/*",
+    "*://*.parfumsclub.de/*"
   ],
   "content_scripts": [
-      {
-          "matches": [
-              "*://*.dm.de/*",
-              "*://*.zara.com/de/*",
-              "*://*.ikea.com/de/*",
-              "*://*.parfumdreams.de/*"
-          ],
-          "css": ["styles.css"],
-          "js": [
-              "js/plugin-manager.js",
-              "js/config.js",
-              "plugins/dm.js",
-              "plugins/zara.js",
-              "plugins/ikea.js",
-              "plugins/parfumdreams.js",
-              "js/init-plugins.js",
-              "js/content.js"
-          ],
-          "run_at": "document_end"
-      }
+    {
+      "matches": [
+        "*://*.dm.de/*",
+        "*://*.zara.com/de/*",
+        "*://*.ikea.com/de/*",
+        "*://*.parfumdreams.de/*",
+        "*://*.parfumsclub.de/*"
+      ],
+      "css": ["styles.css"],
+      "js": [
+        "js/plugin-manager.js",
+        "js/config.js",
+        "plugins/dm.js",
+        "plugins/zara.js",
+        "plugins/ikea.js",
+        "plugins/parfumdreams.js",
+        "plugins/parfumsclub.js",
+        "js/init-plugins.js",
+        "js/content.js"
+      ],
+      "run_at": "document_end"
+    }
   ]
 }
