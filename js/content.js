@@ -37,7 +37,7 @@ const DOMHandler = {
     createPriceElement(price) {
         const element = document.createElement('span');
         element.className = 'rub-price';
-        element.textContent = price;
+        element.textContent = `${Math.ceil(price).toLocaleString('ru-RU')} ₽`;
         return element;
     },
 
@@ -102,97 +102,207 @@ function debounce(func, wait) {
     };
 }
 
-// Функция ожидания загрузки скрипта (если нужно)
-async function waitForScript(scriptName, config) {
-    if (!scriptName) return;
-    let attempts = 0;
-    const maxAttempts = 3;
-    while (attempts < maxAttempts) {
-        if (window[scriptName]) return;
-        await new Promise(resolve => setTimeout(resolve, 500));
-        attempts++;
-    }
-}
+// Добавим защиту от множественных обновлений
+let isProcessing = false;
+let processTimeout = null;
 
-// Основная функция добавления рублёвых цен
-async function addRubPrice(exchangeRate) {
-    const config = getCurrentSiteConfig();
-    if (!config) return;
+async function initPriceProcessing(config) {
+    // Если уже идет обработка, отменяем
+    if (isProcessing) {
+        clearTimeout(processTimeout);
+        return;
+    }
+    
+    isProcessing = true;
+    console.log('🔍 [RUB Prices]: Current config:', config);
 
     try {
-        DOMHandler.clearOldPrices();
+        // Очищаем старые цены
+        const oldPrices = document.querySelectorAll('.rub-price');
+        oldPrices.forEach(el => el.remove());
         
-        await Promise.all([
-            waitForScript(config.scriptToWait, config),
-            new Promise(resolve => setTimeout(resolve, config.delay || 1000))
-        ]);
+        // Сбрасываем атрибуты
+        document.querySelectorAll('[data-rub-price-processed]').forEach(el => {
+            el.removeAttribute('data-rub-price-processed');
+            el.removeAttribute('data-rub-price');
+        });
 
-        const debouncedUpdate = debounce(async () => {
-            try {
-                const priceElement = DOMHandler.findPriceElement(config);
-                if (priceElement) {
-                    DOMHandler.addConvertedPrice(priceElement, exchangeRate);
-                }
-            } catch (err) {}
+        // Ждем загрузку и задержку
+        if (config.scriptToWait) {
+            await waitForScript(config.scriptToWait);
+        }
+        await new Promise(resolve => setTimeout(resolve, config.delay || 1000));
+
+        // Находим и обрабатываем цены
+        const priceElements = document.querySelectorAll(config.priceSelector);
+        console.log('🔍 [RUB Prices]: Found price elements:', priceElements.length);
+
+        for (const element of priceElements) {
+            if (!element.hasAttribute('data-rub-price-processed')) {
+                await processPrice(element, config);
+            }
+        }
+    } finally {
+        // Сбрасываем флаг обработки через небольшую задержку
+        processTimeout = setTimeout(() => {
+            isProcessing = false;
         }, 500);
-
-        const container = document.querySelector(config.containerSelector) || document.body;
-        const observer = new MutationObserver(debouncedUpdate);
-        observer.observe(container, { childList: true, subtree: true });
-
-        const setupUrlObserver = () => {
-            let lastUrl = location.href;
-            const urlObserver = new MutationObserver(debounce(() => {
-                if (location.href !== lastUrl) {
-                    lastUrl = location.href;
-                    DOMHandler.clearOldPrices();
-                    init();
-                }
-            }, 500));
-            urlObserver.observe(document.body, { childList: true, subtree: true });
-        };
-
-        setupUrlObserver();
-        await debouncedUpdate();
-
-    } catch (err) {}
+    }
 }
 
-// Слушатель изменений в storage
-chrome.storage.onChanged.addListener((changes, namespace) => {
-    if (namespace === 'sync' && changes.exchangeRate) {
-        DOMHandler.clearOldPrices();
-        addRubPrice(changes.exchangeRate.newValue);
-    }
-});
-
-// Слушатель сообщений от popup
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    if (message.type === 'updateExchangeRate') {
-        DOMHandler.clearOldPrices();
-        addRubPrice(message.rate);
-        sendResponse({ success: true });
-    }
-    return true;
-});
-
-// Инициализация с обновленным getExchangeRate
-const init = async () => {
+// Функция для обработки отдельной цены
+async function processPrice(element, config) {
     try {
-        if (document.readyState !== 'complete' && document.readyState !== 'interactive') {
-            await new Promise(resolve => {
-                document.addEventListener('DOMContentLoaded', resolve, { once: true });
-            });
+        // Логируем начало обработки
+        log('Starting price processing for element:', element);
+        
+        const priceText = element.textContent.trim();
+        log('Price text found:', priceText);
+        
+        const match = priceText.match(/(\d+[,.]\d+)/);
+        if (!match) {
+            warn('No price match found in text:', priceText);
+            return false;
         }
 
-        const exchangeRate = await CurrencyConverter.getExchangeRate();
-        await addRubPrice(exchangeRate);
-    } catch (err) {}
-};
+        const price = parseFloat(match[1].replace(',', '.'));
+        if (isNaN(price)) {
+            warn('Invalid price number:', match[1]);
+            return false;
+        }
+        log('Parsed price:', price);
 
-// Запуск с учетом состояния DOM
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-} else {
-    init();
+        // Получаем плагин
+        const hostname = window.location.hostname.replace('www.', '');
+        const pluginName = `${hostname.split('.')[0]}Plugin`;
+        const plugin = window[pluginName];
+        
+        log('Plugin name:', pluginName);
+        log('Plugin found:', !!plugin);
+        
+        if (plugin && plugin.helpers) {
+            log('Using plugin helpers for', plugin.name);
+            
+            const processedPrice = plugin.helpers.preprocessPrice(price);
+            log('Preprocessed price:', processedPrice);
+            
+            // Получаем курс обмена
+            const exchangeRate = await CurrencyConverter.getExchangeRate();
+            log('Exchange rate:', exchangeRate);
+            
+            const rubPrice = processedPrice * exchangeRate;
+            log('Calculated RUB price:', rubPrice);
+            
+            const container = config.containerSelector ? 
+                element.closest(config.containerSelector) : 
+                element.parentElement;
+            
+            log('Found container:', !!container);
+            
+            plugin.helpers.insertPrice(container, price, rubPrice);
+            
+            element.setAttribute('data-rub-price', 'true');
+            element.setAttribute('data-rub-price-processed', 'true');
+            
+            log('Price processing completed successfully');
+            return true;
+        } else {
+            warn('No plugin or helpers found for', hostname);
+        }
+        
+        return false;
+    } catch (error) {
+        error('Error processing price:', error);
+        return false;
+    }
 }
+
+// Функция для ожидания загрузки скрипта
+function waitForScript(scriptUrl) {
+    return new Promise(resolve => {
+        if (document.querySelector(`script[src*="${scriptUrl}"]`)) {
+            resolve();
+        } else {
+            const observer = new MutationObserver((mutations, obs) => {
+                if (document.querySelector(`script[src*="${scriptUrl}"]`)) {
+                    obs.disconnect();
+                    resolve();
+                }
+            });
+
+            observer.observe(document.documentElement, {
+                childList: true,
+                subtree: true
+            });
+        }
+    });
+}
+
+// Функция для отслеживания изменений URL
+function setupUrlChangeDetection(config) {
+    let lastUrl = location.href;
+    
+    const observer = new MutationObserver(() => {
+        if (lastUrl !== location.href) {
+            console.log('🔍 [RUB Prices]: URL changed, updating prices...');
+            lastUrl = location.href;
+            
+            if (config.updateConfig?.clearExisting) {
+                const processedElements = document.querySelectorAll('[data-rub-price-processed]');
+                processedElements.forEach(el => {
+                    el.removeAttribute('data-rub-price-processed');
+                    el.removeAttribute('data-rub-price');
+                });
+            }
+            
+            setTimeout(() => {
+                initPriceProcessing(config);
+            }, config.urlChangeDetection?.reloadDelay || 1000);
+        }
+    });
+
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true
+    });
+}
+
+// Обновляем функцию наблюдателя
+function setupPriceObserver(config) {
+    let observerTimeout;
+    
+    const observer = new MutationObserver((mutations) => {
+        // Отменяем предыдущий таймаут
+        clearTimeout(observerTimeout);
+        
+        // Устанавливаем новый с задержкой
+        observerTimeout = setTimeout(() => {
+            initPriceProcessing(config);
+        }, 300);
+    });
+
+    const targetNode = document.querySelector(config.observeTarget) || document.body;
+    observer.observe(targetNode, config.observeConfig);
+}
+
+// Основная функция инициализации
+async function init() {
+    console.log('🔍 [RUB Prices]: Content script loaded');
+    
+    const hostname = window.location.hostname;
+    const siteKey = Object.keys(window.SITE_CONFIGS).find(key => hostname.includes(key));
+    
+    if (siteKey) {
+        const config = window.SITE_CONFIGS[siteKey];
+        document.body.classList.add(siteKey.replace('.', '-'));
+        
+        if (config.urlChangeDetection?.enabled) {
+            setupUrlChangeDetection(config);
+        }
+        
+        await initPriceProcessing(config);
+    }
+}
+
+// Запускаем инициализацию
+init();

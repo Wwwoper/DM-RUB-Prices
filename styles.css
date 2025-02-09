@@ -1,23 +1,17 @@
 .rub-price {
     margin-left: 10px;
     color: #666;
-    background-color: #fff3b5;
+    background-color: #f1d02a;
     padding: 2px 6px;
     border-radius: 3px;
     font-weight: 500;
     display: inline-block;
+    font-size: 20px;
+    font-weight: bold;
 }
 
-/* Специфичные стили для разных сайтов */
-.mueller-de .rub-price {
-    /* Специфичные стили для mueller.de */
-}
 
-.rossmann-de .rub-price {
-    /* Специфичные стили для rossmann.de */
-}
-
-/* Специфичные стили для Zara */
+/* Специфичные стили для Zara
 .zara-com .rub-price {
     margin-left: 8px;
     color: #000;
@@ -26,4 +20,19 @@
     border-radius: 4px;
     font-size: 14px;
     font-weight: 400;
+    display: block !important;
+    margin-top: 4px;
+} */
+
+/* Дополнительные стили для стабилизации цен Zara */
+.zara-com .money-amount__main[data-rub-price="true"] {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    min-height: 20px;
+    transition: opacity 0.3s ease-in-out;
+}
+
+.zara-com .product-detail-info__price-amount {
+    min-height: 40px;
 }

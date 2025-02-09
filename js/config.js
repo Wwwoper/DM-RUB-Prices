@@ -38,16 +38,19 @@ const SITE_CONFIGS = {
         currencySymbol: '€'
     },
     'zara.com': {
-        priceSelector: '.price__amount--on-sale .money-amount__main',
-        containerSelector: '.price__amount-wrapper',
-        regularPriceSelector: '.price__amount-wrapper .money-amount__main',
-        scriptToWait: null,
-        currencySymbol: 'EUR',
+        priceSelector: '.product-detail-info__price [data-qa-qualifier="price-amount-current"] .money-amount__main',
+        containerSelector: '.product-detail-info__price .money-amount__main',
+        currencySymbol: '€',
         delay: 3000,
+        dynamicUpdate: true,
+        observeConfig: {
+            childList: true,
+            subtree: true
+        },
+        observeTarget: '.product-detail-info__price',
         alternativePriceSelectors: [
-            '.price-current__amount .money-amount__main',
-            '[data-qa-qualifier="price-amount-current"] .money-amount__main',
-            '.price__amount .money-amount__main'
+            '.product-detail-info__price .price-current__amount .money-amount__main',
+            '.product-detail-info__price [data-qa-qualifier="price-amount-current"] .money-amount__main'
         ]
     },
     'ikea.com': {
@@ -59,6 +62,12 @@ const SITE_CONFIGS = {
     'cocooncenter.de': {
         priceSelector: '.prix_fiche_produit [itemprop="price"]',
         containerSelector: '.prix_fiche_produit',
+        currencySymbol: '€',
+        delay: 2000
+    },
+    'parfumsclub.de': {
+        priceSelector: '#listPrices .contPrecioNuevo',
+        containerSelector: '#listPrices',
         currencySymbol: '€',
         delay: 2000
     }
