@@ -111,9 +111,27 @@
             margin-top: 15px;
             padding-top: 10px;
             border-top: 1px solid #eee;
+            text-align: center;
+        }
+
+        .footer span {
+            display: block;
+            margin-bottom: 5px;
             font-size: 12px;
             color: #666;
-            text-align: center;
+        }
+
+        .options-link {
+            display: inline-block;
+            margin-top: 5px;
+            color: #4CAF50;
+            text-decoration: none;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .options-link:hover {
+            text-decoration: underline;
         }
     </style>
 </head>
@@ -141,7 +159,8 @@
         <div id="status" class="status"></div>
         
         <div class="footer">
-            Версия ... • Автоматическая конвертация цен
+            <span>Версия 3.02 • Автоматическая конвертация цен</span>
+            <a href="#" id="openOptions" class="options-link">Открыть настройки</a>
         </div>
     </div>
     <script src="js/popup.js"></script>

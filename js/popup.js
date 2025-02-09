@@ -3,7 +3,8 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const quickRateInput = document.getElementById('quickRate');
     const quickSaveButton = document.getElementById('quickSave');
-    const footer = document.querySelector('.footer');
+    const footer = document.querySelector('.footer span');
+    const openOptionsLink = document.getElementById('openOptions');
 
     // Получаем версию из манифеста
     const manifest = chrome.runtime.getManifest();
@@ -75,4 +76,13 @@ document.addEventListener('DOMContentLoaded', () => {
             quickSaveButton.click();
         }
     });
+
+    // Добавляем обработчик для открытия страницы настроек
+    if (openOptionsLink) {
+        openOptionsLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            console.log('Options link clicked');
+            chrome.runtime.openOptionsPage();
+        });
+    }
 }); 
