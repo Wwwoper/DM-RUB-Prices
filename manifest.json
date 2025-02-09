@@ -26,15 +26,17 @@
   ],
   "host_permissions": [
       "*://*.dm.de/*",
-      "*://*.zara.com/de/*",
-      "*://*.ikea.com/de/*"
+      "*://*.zara.com/*",
+      "*://*.ikea.com/*",
+      "*://*.parfumdreams.de/*"
   ],
   "content_scripts": [
       {
           "matches": [
               "*://*.dm.de/*",
               "*://*.zara.com/de/*",
-              "*://*.ikea.com/de/*"
+              "*://*.ikea.com/de/*",
+              "*://*.parfumdreams.de/*"
           ],
           "css": ["styles.css"],
           "js": [
@@ -43,6 +45,7 @@
               "plugins/dm.js",
               "plugins/zara.js",
               "plugins/ikea.js",
+              "plugins/parfumdreams.js",
               "js/init-plugins.js",
               "js/content.js"
           ],

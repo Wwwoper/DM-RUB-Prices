@@ -52,7 +52,12 @@ document.addEventListener('DOMContentLoaded', () => {
             // Отправляем сообщение и перезагружаем активные вкладки
             chrome.tabs.query({}, (tabs) => {
                 tabs.forEach(tab => {
-                    if (tab.url && (tab.url.includes('dm.de') || tab.url.includes('zara.com') || tab.url.includes('ikea.com'))) {
+                    if (tab.url && (
+                        tab.url.includes('dm.de') || 
+                        tab.url.includes('zara.com') || 
+                        tab.url.includes('ikea.com') ||
+                        tab.url.includes('parfumdreams.de')
+                    )) {
                         console.log('Reloading tab:', tab.url);
                         // Сначала отправляем сообщение
                         chrome.tabs.sendMessage(tab.id, {
