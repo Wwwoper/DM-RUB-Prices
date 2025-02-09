@@ -3,18 +3,18 @@
   "name": "RUB Prices",
   "short_name": "RUB Prices",
   "description": "Автоматически конвертирует цену в карточке товара из евро в рубли",
-  "version": "2.3",
+  "version": "3.02",
   "icons": {
     "16": "icons/icon16.png",
     "32": "icons/icon32.png",
-    "48": "icons/icon48.png",
+    "64": "icons/icon64.png",
     "128": "icons/icon128.png"
   },
   "action": {
     "default_icon": {
       "16": "icons/icon16.png",
       "32": "icons/icon32.png",
-      "48": "icons/icon48.png",
+      "64": "icons/icon64.png",
       "128": "icons/icon128.png"
     },
     "default_popup": "popup.html"
@@ -26,16 +26,26 @@
   ],
   "host_permissions": [
       "*://*.dm.de/*",
-      "*://*.zara.com/de/*"
+      "*://*.zara.com/de/*",
+      "*://*.ikea.com/de/*"
   ],
   "content_scripts": [
       {
           "matches": [
               "*://*.dm.de/*",
-              "*://*.zara.com/de/*"
+              "*://*.zara.com/de/*",
+              "*://*.ikea.com/de/*"
           ],
           "css": ["styles.css"],
-          "js": ["content.js"],
+          "js": [
+              "js/plugin-manager.js",
+              "js/config.js",
+              "plugins/dm.js",
+              "plugins/zara.js",
+              "plugins/ikea.js",
+              "js/init-plugins.js",
+              "js/content.js"
+          ],
           "run_at": "document_end"
       }
   ]
