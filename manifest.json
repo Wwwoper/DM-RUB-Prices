@@ -29,7 +29,8 @@
     "*://*.zara.com/*",
     "*://*.ikea.com/*",
     "*://*.parfumdreams.de/*",
-    "*://*.parfumsclub.de/*"
+    "*://*.parfumsclub.de/*",
+    "*://*.cocooncenter.de/*"
   ],
   "content_scripts": [
     {
@@ -38,7 +39,8 @@
         "*://*.zara.com/de/*",
         "*://*.ikea.com/de/*",
         "*://*.parfumdreams.de/*",
-        "*://*.parfumsclub.de/*"
+        "*://*.parfumsclub.de/*",
+        "*://*.cocooncenter.de/*"
       ],
       "css": ["styles.css"],
       "js": [
@@ -49,6 +51,7 @@
         "plugins/ikea.js",
         "plugins/parfumdreams.js",
         "plugins/parfumsclub.js",
+        "plugins/cocooncenter.js",
         "js/init-plugins.js",
         "js/content.js"
       ],
