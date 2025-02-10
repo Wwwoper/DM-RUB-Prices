@@ -153,7 +153,6 @@ async function initPriceProcessing(config) {
 // Функция для обработки отдельной цены
 async function processPrice(element, config) {
     try {
-        // Логируем начало обработки
         log('Starting price processing for element:', element);
         
         const priceText = element.textContent.trim();
@@ -172,25 +171,18 @@ async function processPrice(element, config) {
         }
         log('Parsed price:', price);
 
-        // Получаем плагин
+        // Получаем хелперы для текущего сайта
         const hostname = window.location.hostname.replace('www.', '');
-        const pluginName = `${hostname.split('.')[0]}Plugin`;
-        const plugin = window[pluginName];
+        const helpers = window.pluginManager.getHelpers(hostname);
         
-        log('Plugin name:', pluginName);
-        log('Plugin found:', !!plugin);
+        log('Helpers found:', !!helpers);
         
-        if (plugin && plugin.helpers) {
-            log('Using plugin helpers for', plugin.name);
-            
-            const processedPrice = plugin.helpers.preprocessPrice(price);
-            log('Preprocessed price:', processedPrice);
-            
+        if (helpers && helpers.displayRubPrice) {
             // Получаем курс обмена
             const exchangeRate = await CurrencyConverter.getExchangeRate();
             log('Exchange rate:', exchangeRate);
             
-            const rubPrice = processedPrice * exchangeRate;
+            const rubPrice = price * exchangeRate;
             log('Calculated RUB price:', rubPrice);
             
             const container = config.containerSelector ? 
@@ -199,15 +191,16 @@ async function processPrice(element, config) {
             
             log('Found container:', !!container);
             
-            plugin.helpers.insertPrice(container, price, rubPrice);
-            
-            element.setAttribute('data-rub-price', 'true');
-            element.setAttribute('data-rub-price-processed', 'true');
-            
-            log('Price processing completed successfully');
-            return true;
+            if (container) {
+                // Используем новый хелпер для отображения цены
+                helpers.displayRubPrice(container, price, rubPrice);
+                
+                element.setAttribute('data-rub-price-processed', 'true');
+                log('Price processing completed successfully');
+                return true;
+            }
         } else {
-            warn('No plugin or helpers found for', hostname);
+            warn('No helpers found for', hostname);
         }
         
         return false;
